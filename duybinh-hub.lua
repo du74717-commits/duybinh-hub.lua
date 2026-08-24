@@ -1,28 +1,44 @@
 -- DUYBINH HUB | LOCAL KEY GATE
--- Key: duybinhtsb
+-- Key: duybinhhub
 -- Expires: NEVER
--- Get Key message: "Key là: duybinhtsb"
+-- Old saved keys: automatically removed
+-- Get Key: Key là: duybinhhub
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 local CONFIG = {
-    KEY = "duybinhtsb",
+    KEY = "duybinhhub",
     SAVE_FILE = "DuybinhHub_Key.json",
     SCRIPT_URL = "https://vss.pandauth.com/kv/c96fbaae7252d36e",
-    GET_KEY_MESSAGE = "Key là: duybinhtsb",
+    GET_KEY_MESSAGE = "Key là: duybinhhub",
 }
 
 local Player = Players.LocalPlayer
 
--- File helpers
+-- Kiểm tra API file
 local function hasFileAPI()
     return type(isfile) == "function"
         and type(readfile) == "function"
         and type(writefile) == "function"
+        and type(delfile) == "function"
+end
+
+-- Xóa key cũ
+local function deleteOldKey()
+    if not hasFileAPI() then
+        return
+    end
+
+    pcall(function()
+        if isfile(CONFIG.SAVE_FILE) then
+            delfile(CONFIG.SAVE_FILE)
+        end
+    end)
 end
 
 -- Kiểm tra key đã lưu
+-- Chỉ chấp nhận duybinhhub
 local function getSavedKey()
     if not hasFileAPI() then
         return false
@@ -37,20 +53,38 @@ local function getSavedKey()
             readfile(CONFIG.SAVE_FILE)
         )
 
-        -- Key đúng = vô hạn
-        return type(data) == "table"
-            and data.key == CONFIG.KEY
+        if type(data) ~= "table" then
+            deleteOldKey()
+            return false
+        end
+
+        -- Nếu là key cũ thì xóa ngay
+        if data.key ~= CONFIG.KEY then
+            deleteOldKey()
+            return false
+        end
+
+        return true
     end)
 
-    return ok and result == true
+    if not ok then
+        deleteOldKey()
+        return false
+    end
+
+    return result == true
 end
 
--- Lưu key vô hạn
-local function saveKey()
+-- Lưu key mới vô hạn
+local function saveNewKey()
     if not hasFileAPI() then
         return
     end
 
+    -- Xóa toàn bộ key cũ trước
+    deleteOldKey()
+
+    -- Lưu key mới duybinhhub
     local payload = {
         key = CONFIG.KEY,
         activatedAt = os.time(),
@@ -78,7 +112,7 @@ local function runProtectedScript()
     end
 end
 
--- Nếu key đã lưu thì chạy luôn
+-- Chỉ chạy tự động nếu key đã lưu chính xác là duybinhhub
 if getSavedKey() then
     runProtectedScript()
     return
@@ -171,7 +205,7 @@ GetKeyButton.Parent = Main
 Instance.new("UICorner", GetKeyButton).CornerRadius = UDim.new(0, 10)
 
 local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, -30, 0, 0, 28)
+Status.Size = UDim2.new(1, -30, 0, 28)
 Status.Position = UDim2.new(0, 15, 1, 8)
 Status.BackgroundTransparency = 1
 Status.Text = ""
@@ -180,13 +214,17 @@ Status.TextSize = 14
 Status.TextXAlignment = Enum.TextXAlignment.Center
 Status.Parent = Main
 
--- Check Key
+-- CHECK KEY
 CheckButton.MouseButton1Click:Connect(function()
-    if KeyBox.Text == CONFIG.KEY then
+    local enteredKey = KeyBox.Text
+
+    if enteredKey == CONFIG.KEY then
         Status.Text = "✓ KEY ĐÚNG - ĐANG MỞ DUYBINH HUB"
         Status.TextColor3 = Color3.fromRGB(90, 255, 130)
 
-        saveKey()
+        -- Xóa toàn bộ key cũ rồi mới lưu duybinhhub
+        saveNewKey()
+
         task.wait(0.5)
 
         ScreenGui:Destroy()
@@ -197,8 +235,8 @@ CheckButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Get Key
+-- GET KEY
 GetKeyButton.MouseButton1Click:Connect(function()
-    Status.Text = CONFIG.GET_KEY_MESSAGE
+    Status.Text = "Key là: duybinhhub"
     Status.TextColor3 = Color3.fromRGB(255, 220, 100)
 end)
