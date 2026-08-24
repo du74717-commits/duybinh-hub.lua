@@ -1,60 +1,51 @@
 -- DUYBINH HUB | LOCAL KEY GATE
 -- Key: duybinhtsb
--- Expires: 5 days after successful activation
--- Get Key message: "flo duybinh để nhận key"
+-- Expires: NEVER
+-- Get Key message: "Key là: duybinhtsb"
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 local CONFIG = {
     KEY = "duybinhtsb",
-    EXPIRY_SECONDS = 5 * 24 * 60 * 60,
     SAVE_FILE = "DuybinhHub_Key.json",
     SCRIPT_URL = "https://vss.pandauth.com/kv/c96fbaae7252d36e",
-    GET_KEY_MESSAGE = "flo duybinh để nhận key",
+    GET_KEY_MESSAGE = "Key là: duybinhtsb",
 }
 
 local Player = Players.LocalPlayer
 
--- File helpers: persistence works where the environment provides file APIs.
+-- File helpers
 local function hasFileAPI()
     return type(isfile) == "function"
         and type(readfile) == "function"
         and type(writefile) == "function"
 end
 
+-- Kiểm tra key đã lưu
 local function getSavedKey()
     if not hasFileAPI() then
-        return nil
+        return false
     end
 
     local ok, result = pcall(function()
         if not isfile(CONFIG.SAVE_FILE) then
-            return nil
+            return false
         end
 
         local data = HttpService:JSONDecode(
             readfile(CONFIG.SAVE_FILE)
         )
 
-        if type(data) ~= "table" then
-            return nil
-        end
-
-        if data.key ~= CONFIG.KEY then
-            return nil
-        end
-
-        if tonumber(data.expiresAt) <= os.time() then
-            return nil
-        end
-
-        return data
+        -- Key đúng = vô hạn
+        return type(data) == "table"
+            and data.key == CONFIG.KEY
     end)
 
-    return ok and result or nil
+    return ok and result == true
 end
 
+-- Lưu key vô hạn
 local function saveKey()
     if not hasFileAPI() then
         return
@@ -63,7 +54,7 @@ local function saveKey()
     local payload = {
         key = CONFIG.KEY,
         activatedAt = os.time(),
-        expiresAt = os.time() + CONFIG.EXPIRY_SECONDS,
+        expires = "never",
     }
 
     pcall(function()
@@ -74,6 +65,7 @@ local function saveKey()
     end)
 end
 
+-- Chạy script chính
 local function runProtectedScript()
     local ok, err = pcall(function()
         loadstring(
@@ -86,7 +78,7 @@ local function runProtectedScript()
     end
 end
 
--- If key is still valid, run immediately.
+-- Nếu key đã lưu thì chạy luôn
 if getSavedKey() then
     runProtectedScript()
     return
@@ -127,7 +119,7 @@ local Info = Instance.new("TextLabel")
 Info.Size = UDim2.new(1, -30, 0, 30)
 Info.Position = UDim2.fromOffset(15, 65)
 Info.BackgroundTransparency = 1
-Info.Text = "Nhập key để mở hub • Hạn key: 5 ngày"
+Info.Text = "Nhập key để mở hub • Hạn key: Vô hạn"
 Info.Font = Enum.Font.Gotham
 Info.TextSize = 14
 Info.TextColor3 = Color3.fromRGB(185, 185, 195)
@@ -179,7 +171,7 @@ GetKeyButton.Parent = Main
 Instance.new("UICorner", GetKeyButton).CornerRadius = UDim.new(0, 10)
 
 local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, -30, 0, 28)
+Status.Size = UDim2.new(1, -30, 0, 0, 28)
 Status.Position = UDim2.new(0, 15, 1, 8)
 Status.BackgroundTransparency = 1
 Status.Text = ""
@@ -188,6 +180,7 @@ Status.TextSize = 14
 Status.TextXAlignment = Enum.TextXAlignment.Center
 Status.Parent = Main
 
+-- Check Key
 CheckButton.MouseButton1Click:Connect(function()
     if KeyBox.Text == CONFIG.KEY then
         Status.Text = "✓ KEY ĐÚNG - ĐANG MỞ DUYBINH HUB"
@@ -204,6 +197,7 @@ CheckButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Get Key
 GetKeyButton.MouseButton1Click:Connect(function()
     Status.Text = CONFIG.GET_KEY_MESSAGE
     Status.TextColor3 = Color3.fromRGB(255, 220, 100)
